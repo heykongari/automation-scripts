@@ -4,11 +4,11 @@
 check_key_pair() {
 
     # list existing key-pairs (if any) in an array.
-    mapfile -t pem_keys < <(find ~/.ssh -type f -name "*.pem")
+    mapfile -t pem_keys < <(find ~/.aws -type f -name "*.pem")
 
     # no key-pair found.
     if [[ ${#pem_keys[@]} -eq 0 ]]; then
-        echo "No existing key-pair(s) found. Make sure .pem file is in ~/.ssh/ directory."
+        echo "No existing key-pair(s) found. Make sure .pem file is in ~/.aws/ directory."
         return
     fi
 
@@ -33,12 +33,22 @@ check_key_pair() {
 }
 
 # Define a function to create a new key-pair.
+#!/bin/bash
+
 create_key_pair() {
 
+    echo "Creating a new key-pair..."
     # specify key-name and key-region.
-    read -p "Creating a new key-pair. Enter a name: " KEY_NAME
+    while true; do
+        read -p "Enter a name: " KEY_NAME
+        if [[ -n $KEY_NAME ]]; then
+            break
+        else
+            echo "Input cannot be empty. Please enter a valid name."
+        fi
+    done
     read -p "Enter a region (default region is set to us-east-1): " KEY_REGION
-
+    
     # ensure target directory exists.
     mkdir -p ~/.aws/
 
