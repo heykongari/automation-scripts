@@ -25,7 +25,6 @@ check_security_group() {
             id=$(echo "${sg_list[$i]}" | awk '{print $2}')
             echo "$((i + 1)). $name ($id)"
         done
-
         echo ""
     else
         return 1
@@ -123,7 +122,7 @@ create_security_group() {
             echo "Authorization successful."
         else
             echo "SSH Authorization failed."
-        return 1
+            return 1
         fi
     else
         echo "Failed to create security group."
