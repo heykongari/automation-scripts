@@ -130,4 +130,4 @@ create_security_group() {
     fi
 }
 
-check_security_group
+read -p "Press Enter to continue..."

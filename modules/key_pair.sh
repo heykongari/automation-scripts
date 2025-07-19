@@ -48,7 +48,7 @@ check_key_pair() {
                             echo "Selected key-pair: $SELECTED_KEY"
                             break
                         else
-                            echo "Invalid choice. Please enter a number bebtween 1 and $KEY_NUM"
+                            echo "Invalid choice. Please enter a number between 1 and $KEY_NUM"
                         fi
                     done
                 fi
@@ -107,4 +107,4 @@ create_key_pair() {
     fi
 }
 
-check_key_pair
+read -p "Press Enter to continue..."
