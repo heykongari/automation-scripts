@@ -62,7 +62,58 @@ check_security_group() {
                 echo ""
                 ;;
             create)
-                create_security_group
+                echo ""
+                echo "Creating a new security group..."
+                
+                # Get group info.
+                while true; do
+                    read -p "Enter a name for the security group: " SG_NAME
+                    read -p "Enter a short description: " SG_DESC
+                    if [[ -n $SG_NAME && -n $SG_DESC ]]; then
+                        break
+                    else
+                        echo "Name and Description cannot be empty! Please enter a valid name and description."
+                    fi
+                done
+
+                read -p "Enter a region (default: us-east-1) : " SG_REGION
+                echo ""
+                SG_REGION=${SG_REGION:-us-east-1}
+
+                SG_ID=$(aws ec2 create-security-group \
+                --group-name "$SG_NAME" \
+                --description "$SG_DESC" \
+                --region "$SG_REGION" \
+                --query "GroupId" \
+                --output text 2>/dev/null)
+
+                if [[ $? -eq 0 && -n "$SG_ID" ]]; then
+                    SELECTED_SG_NAME="$SG_NAME"
+                    SELECTED_SG_ID="$SG_ID"
+                    echo "Security group created successfully."
+                    echo "$SELECTED_SG_NAME ($SELECTED_SG_ID)"
+                    echo ""
+
+                    # Add ssh ingress rule
+                    echo "Authorizing SSH ingress rule..."
+                    aws ec2 authorize-security-group-ingress \
+                    --group-id "$SELECTED_SG_ID" \
+                    --protocol tcp \
+                    --port 22 \
+                    --cidr 0.0.0.0/0 \
+                    --region "$SG_REGION" \
+                    --output text > /dev/null 2>&1
+
+                    if [[ $? -eq 0 ]]; then
+                        echo "Authorization successful."
+                    else
+                        echo "SSH Authorization failed."
+                        return 1
+                    fi
+                else
+                    echo "Failed to create security group."
+                    return 1
+                fi
                 break
                 echo ""
                 ;;
@@ -72,62 +123,5 @@ check_security_group() {
                 ;;
         esac
     done
-
+    read -p "Press Enter to continue..."
 }
-
-create_security_group() {
-    echo ""
-    echo "Creating a new security group..."
-    
-    # Get group info.
-    while true; do
-        read -p "Enter a name for the security group: " SG_NAME
-        read -p "Enter a short description: " SG_DESC
-        if [[ -n $SG_NAME && -n $SG_DESC ]]; then
-            break
-        else
-            echo "Name and Description cannot be empty! Please enter a valid name and description."
-        fi
-    done
-
-    read -p "Enter a region (default: us-east-1) : " SG_REGION
-    echo ""
-    SG_REGION=${SG_REGION:-us-east-1}
-
-    SG_ID=$(aws ec2 create-security-group \
-    --group-name "$SG_NAME" \
-    --description "$SG_DESC" \
-    --region "$SG_REGION" \
-    --query "GroupId" \
-    --output text 2>/dev/null)
-
-    if [[ $? -eq 0 && -n "$SG_ID" ]]; then
-        SELECTED_SG_NAME="$SG_NAME"
-        SELECTED_SG_ID="$SG_ID"
-        echo "Security group created successfully."
-        echo "$SELECTED_SG_NAME ($SELECTED_SG_ID)"
-        echo ""
-
-        # Add ssh ingress rule
-        echo "Authorizing SSH ingress rule..."
-        aws ec2 authorize-security-group-ingress \
-        --group-id "$SELECTED_SG_ID" \
-        --protocol tcp \
-        --port 22 \
-        --cidr 0.0.0.0/0 \
-        --region "$SG_REGION" \
-        --output text > /dev/null 2>&1
-
-        if [[ $? -eq 0 ]]; then
-            echo "Authorization successful."
-        else
-            echo "SSH Authorization failed."
-            return 1
-        fi
-    else
-        echo "Failed to create security group."
-        return 1
-    fi
-}
-
-read -p "Press Enter to continue..."

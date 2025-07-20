@@ -56,7 +56,42 @@ check_key_pair() {
                 echo ""
                 ;;
             create)
-                create_key_pair
+                echo ""
+                echo "Creating a new key-pair..."
+
+                # specify key-name and key-region.
+                while true; do
+                    read -p "Enter a name: " KEY_NAME
+                    if [[ -n $KEY_NAME ]]; then
+                        break
+                    else
+                        echo "Input cannot be empty. Please enter a valid name."
+                    fi
+                done
+
+                read -p "Enter a region (default: us-east-1): " KEY_REGION
+                echo ""
+                KEY_REGION=${KEY_REGION:-us-east-1}
+                
+                # ensure target directory exists.
+                mkdir -p ~/.aws/
+
+                # aws command to create a key pair.
+                aws ec2 create-key-pair \
+                --key-name $KEY_NAME \
+                --query "KeyMaterial" \
+                --region $KEY_REGION \
+                --output text > ~/.aws/"$KEY_NAME".pem
+
+                # Change file permissions to read only. Mandatory.
+                if [ $? -eq 0 ]; then
+                    SELECTED_KEY=$KEY_NAME
+                    chmod 400 ~/.aws/$KEY_NAME.pem
+                    echo "'$KEY_NAME' created and saved to ~/.aws/$KEY_NAME.pem successfully."
+                else
+                    echo "Failed to create key-pair."
+                    return 1
+                fi
                 break
                 echo ""
                 ;;
@@ -66,45 +101,6 @@ check_key_pair() {
                 ;;
         esac
     done
+
+    read -p "Press Enter to continue..."
 }
-
-create_key_pair() {
-    echo ""
-    echo "Creating a new key-pair..."
-
-    # specify key-name and key-region.
-    while true; do
-        read -p "Enter a name: " KEY_NAME
-        if [[ -n $KEY_NAME ]]; then
-            break
-        else
-            echo "Input cannot be empty. Please enter a valid name."
-        fi
-    done
-
-    read -p "Enter a region (default: us-east-1): " KEY_REGION
-    echo ""
-    KEY_REGION=${KEY_REGION:-us-east-1}
-    
-    # ensure target directory exists.
-    mkdir -p ~/.aws/
-
-    # aws command to create a key pair.
-    aws ec2 create-key-pair \
-    --key-name $KEY_NAME \
-    --query "KeyMaterial" \
-    --region $KEY_REGION \
-    --output text > ~/.aws/"$KEY_NAME".pem
-
-    # Change file permissions to read only. Mandatory.
-    if [ $? -eq 0 ]; then
-        SELECTED_KEY=$KEY_NAME
-        chmod 400 ~/.aws/$KEY_NAME.pem
-        echo "'$KEY_NAME' created and saved to ~/.aws/$KEY_NAME.pem successfully."
-    else
-        echo "Failed to create key-pair."
-        return 1
-    fi
-}
-
-read -p "Press Enter to continue..."

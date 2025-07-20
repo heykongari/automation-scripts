@@ -89,6 +89,6 @@ launch_instances() {
         return 1
     fi
 
+    read -p "Press enter to continue..."
 }
 
-read -p "Press enter to continue..."
