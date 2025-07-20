@@ -1,6 +1,7 @@
 #!/bin/bash
 
 launch_instances() {
+    echo "Preparing to launch ec2 instnce(s)..."
     echo "Free-tier eligible AMI-IDs in (us-east-1):"
     echo ""
 
@@ -21,6 +22,7 @@ launch_instances() {
 
     while true; do
         read -p "Select (1 or 2): " choice
+        echo ""
         if [[ "$choice" == "1" ]]; then
             read -p "Enter the name of the AMI (e.g., ubuntu-24.04): " option
             if [[ -n "${ami_list[$option]}" ]]; then
@@ -49,6 +51,44 @@ launch_instances() {
             echo "Invalid selection. Please choose 1 or 2."
         fi
     done
+    echo ""
+
+    echo "How many instance(s) do you wish to launch?"
+    while true; do
+        read -p "Enter a number: " count
+        if [[ "$count" =~ ^[1-9]$ ]]; then
+            INSTANCE_COUNT=$count
+            break
+        else
+            echo "Invalid input. Enter a number."
+        fi
+    done
+    echo ""
+
+    echo "Launching $INSTANCE_COUNT EC2 instance(s)..."
+    INSTANCE_IDS=$(aws ec2 run-instances \
+    --image-id "$SELECTED_AMI_ID"\
+    --count "$INSTANCE_COUNT" \
+    --instance-type t2.micro \
+    --key-name "$SELECTED_KEY"\
+    --security-group-ids "$SELECTED_SG_ID"\
+    --region "$SELECTED_AMI_REGION" \
+    --query "Instances[*].InstanceId" \
+    --output text)
+
+    if [[ -n $INSTANCE_IDS ]]; then
+        echo "Waiting for instances to enter 'running' state..."
+        aws ec2 wait instance-running --instance-ids $INSTANCE_IDS
+
+        echo "Launched instance(s) successfully."
+        aws ec2 describe-instances \
+        --query "Reservations[*].Instances[*].[ImageId,InstanceId,PublicIpAddress]" \
+        --output table
+    else
+        echo "Failed to launch instance(s)."
+        return 1
+    fi
+
 }
 
-read -p "Press Enter to continue..."
+read -p "Press enter to continue..."
