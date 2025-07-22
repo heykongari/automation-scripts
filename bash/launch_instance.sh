@@ -27,7 +27,7 @@ launch_instance() {
     while true; do
         echo ""
         read -p "Number of instance(s) to launch: " choice
-        if [[ $choice =~ ^[1-9]$ ]]; then
+        if [[ $choice =~ ^[0-9]+$ ]] && (( choice >= 1 )); then
             INSTANCE_ID=$(aws ec2 run-instances \
             --image-id ami-020cba7c55df1f615 \
             --instance-type t2.micro \
@@ -38,13 +38,13 @@ launch_instance() {
             --output text)
             break
         else
-            echo "Invalid Input. Enter a number between 1 and 9 (both inclusive)."
+            echo "Invalid Input. Try Again."
         fi
     done
 
     if [[ $? -eq 0 && -n $INSTANCE_ID ]]; then
         echo ""
-        echo "Launched $choice EC2 instance(s) on Ubuntu 24.04 successfully!"
+        echo "Launched $choice EC2 Ubuntu 24.04 instance(s) successfully!"
         echo "Loading Instance info..."
         
         # wait for instance to enter 'running' state.
